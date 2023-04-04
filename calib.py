@@ -697,7 +697,7 @@ if __name__ == '__main__':
     #check your calibration makes sense
     camera0_data = [cmtx0, dist0, R0, T0]
     camera1_data = [cmtx1, dist1, R1, T1]
-    check_calibration('camera0', camera0_data, 'camera1', camera1_data, _zshift = 60.)
+    check_calibration('zed_camera_id', camera0_data, camera1_data, _zshift = 60.)
 
 
     """Optional. Define a different origin point and save the calibration data"""
