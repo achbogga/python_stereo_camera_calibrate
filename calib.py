@@ -207,6 +207,26 @@ def save_camera_intrinsics(camera_matrix, distortion_coefs, camera_name):
     outf.write('\n')
 
 
+#load camera intrinsic parameters from a file
+def load_camera_intrinsics(camera_name):
+
+    #Throw an error if the folder does not exist
+    if not os.path.exists('camera_parameters'):
+        raise Exception('Camera parameters folder does not exist. Run calibration first.')
+
+    intrinsic_filename = os.path.join('camera_parameters', camera_name + '_intrinsics.dat')
+    with open(intrinsic_filename, 'r') as fp:
+        lines = fp.readlines()
+        intrinsic_lines = lines[1:4]
+        intrinsic_lines = [ll.replace(' \n', '') for ll in intrinsic_lines]
+        distortion_line = lines[-1]
+        distortion_line = distortion_line.replace(' \n', '')
+    camera_matrix = np.array([np.array([float(en) for en in ll.split(' ')])
+                              for ll in intrinsic_lines])
+    distortion_coefs = np.array([float(en) for en in distortion_line.split(' ')])
+    return camera_matrix, distortion_coefs
+
+
 #open both cameras and take calibration frames
 # def save_frames_two_cams(camera0_name, camera1_name):
 
@@ -650,9 +670,30 @@ def save_extrinsic_calibration_parameters(R0, T0, R1, T1, prefix = ''):
 
     return R0, T0, R1, T1
 
+# load extrinsic calibration parameters from a file
+def load_extrinsic_calibration_parameters(camera_name):
+
+    #Throw an error if the folder does not exist
+    if not os.path.exists('camera_parameters'):
+        raise Exception('Camera parameters folder does not exist. Run calibration first.')
+
+    extrinsic_filename = os.path.join('camera_parameters', camera_name + '_rot_trans.dat')
+    with open(extrinsic_filename, 'r') as fp:
+        lines = fp.readlines()
+        rotation_lines = lines[1:4]
+        rotation_lines = [ll.replace(' \n', '') for ll in rotation_lines]
+        translation_lines = lines[-3:]
+        translation_lines = [ll.replace(' \n', '') for ll in translation_lines]
+    rotation_matrix = np.array([np.array([float(en) for en in ll.split(' ')])
+                              for ll in rotation_lines])
+    translation_vector = np.array([np.array([float(en) for en in ll.split(' ')])
+                                    for ll in translation_lines])
+    return rotation_matrix, translation_vector
+
+
 if __name__ == '__main__':
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print('Call with settings filename: "python3 calibrate.py calibration_settings.yaml"')
         quit()
 
@@ -660,43 +701,51 @@ if __name__ == '__main__':
     parse_calibration_settings_file(sys.argv[1])
 
 
-    # """Step1. Save calibration frames for single cameras"""
-    # save_frames_single_camera('camera0') #save frames for camera0
-    # save_frames_single_camera('camera1') #save frames for camera1
+    if len(sys.argv)>2 and sys.argv[2]=='mono':
+        """Step1. Save calibration frames for single cameras"""
+        save_frames_single_camera('camera0') #save frames for camera0
+        save_frames_single_camera('camera1') #save frames for camera1
+
+        """Step2. Obtain camera intrinsic matrices and save them"""
+        #camera0 intrinsics
+        images_prefix = os.path.join('frames', 'camera0*')
+        cmtx0, dist0 = calibrate_camera_for_intrinsic_parameters(images_prefix)
+        save_camera_intrinsics(cmtx0, dist0, 'camera0') #this will write cmtx and dist to disk
+        #camera1 intrinsics
+        images_prefix = os.path.join('frames', 'camera1*')
+        cmtx1, dist1 = calibrate_camera_for_intrinsic_parameters(images_prefix)
+        save_camera_intrinsics(cmtx1, dist1, 'camera1') #this will write cmtx and dist to disk
+    else:
+        cmtx0, dist0 = load_camera_intrinsics('camera0')
+        cmtx1, dist1 = load_camera_intrinsics('camera1')
 
 
-    """Step2. Obtain camera intrinsic matrices and save them"""
-    #camera0 intrinsics
-    images_prefix = os.path.join('frames', 'camera0*')
-    cmtx0, dist0 = calibrate_camera_for_intrinsic_parameters(images_prefix)
-    save_camera_intrinsics(cmtx0, dist0, 'camera0') #this will write cmtx and dist to disk
-    #camera1 intrinsics
-    images_prefix = os.path.join('frames', 'camera1*')
-    cmtx1, dist1 = calibrate_camera_for_intrinsic_parameters(images_prefix)
-    save_camera_intrinsics(cmtx1, dist1, 'camera1') #this will write cmtx and dist to disk
+    if len(sys.argv)>3 and sys.argv[3]=='stereo':
+        """Step3. Save calibration frames for both cameras simultaneously"""
+        save_frames_from_zed('zed_camera_id') #save simultaneous frames
 
 
-    # """Step3. Save calibration frames for both cameras simultaneously"""
-    # save_frames_from_zed('zed_camera_id') #save simultaneous frames
+        """Step4. Use paired calibration pattern frames to obtain camera0 to camera1 rotation and translation"""
+        frames_prefix_c0 = os.path.join('frames_pair', 'camera0*')
+        frames_prefix_c1 = os.path.join('frames_pair', 'camera1*')
+        R, T = stereo_calibrate(cmtx0, dist0, cmtx1, dist1, frames_prefix_c0, frames_prefix_c1)
 
 
-    """Step4. Use paired calibration pattern frames to obtain camera0 to camera1 rotation and translation"""
-    frames_prefix_c0 = os.path.join('frames_pair', 'camera0*')
-    frames_prefix_c1 = os.path.join('frames_pair', 'camera1*')
-    R, T = stereo_calibrate(cmtx0, dist0, cmtx1, dist1, frames_prefix_c0, frames_prefix_c1)
+        """Step5. Save calibration data where camera0 defines the world space origin."""
+        #camera0 rotation and translation is identity matrix and zeros vector
+        R0 = np.eye(3, dtype=np.float32)
+        T0 = np.array([0., 0., 0.]).reshape((3, 1))
 
+        save_extrinsic_calibration_parameters(R0, T0, R, T) #this will write R and T to disk
+        R1 = R
+        T1 = T #to avoid confusion, camera1 R and T are labeled R1 and T1
+    else:
+        R0, T0 = load_extrinsic_calibration_parameters('camera0')
+        R1, T1 = load_extrinsic_calibration_parameters('camera1')
 
-    """Step5. Save calibration data where camera0 defines the world space origin."""
-    #camera0 rotation and translation is identity matrix and zeros vector
-    R0 = np.eye(3, dtype=np.float32)
-    T0 = np.array([0., 0., 0.]).reshape((3, 1))
-
-    save_extrinsic_calibration_parameters(R0, T0, R, T) #this will write R and T to disk
-    R1 = R
-    T1 = T #to avoid confusion, camera1 R and T are labeled R1 and T1
-    #check your calibration makes sense
     camera0_data = [cmtx0, dist0, R0, T0]
     camera1_data = [cmtx1, dist1, R1, T1]
+    #check your calibration makes sense
     check_calibration('zed_camera_id', camera0_data, camera1_data, _zshift = 60.)
 
 
