@@ -341,10 +341,10 @@ def save_frames_from_zed(zed_camera_id):
 
             #save the frame when cooldown reaches 0.
             if cooldown <= 0:
-                savename = os.path.join('frames_pair', zed_camera_id + '0_' + str(saved_count) + '.png')
+                savename = os.path.join('frames_pair', 'camera0_' + str(saved_count) + '.png')
                 cv.imwrite(savename, frame0)
 
-                savename = os.path.join('frames_pair', zed_camera_id + '1_' + str(saved_count) + '.png')
+                savename = os.path.join('frames_pair', 'camera1_' + str(saved_count) + '.png')
                 cv.imwrite(savename, frame1)
 
                 saved_count += 1
@@ -403,7 +403,7 @@ def stereo_calibrate(mtx0, dist0, mtx1, dist1, frames_prefix_c0, frames_prefix_c
     #coordinates of the checkerboard in checkerboard world space.
     objpoints = [] # 3d point in real world space
 
-    for frame0, frame1 in zip(c0_images, c1_images, strict=True):
+    for frame0, frame1 in zip(c0_images, c1_images):
         gray1 = cv.cvtColor(frame0, cv.COLOR_BGR2GRAY)
         gray2 = cv.cvtColor(frame1, cv.COLOR_BGR2GRAY)
         c_ret1, corners1 = cv.findChessboardCorners(gray1, (rows, columns), None)
@@ -526,13 +526,13 @@ def check_calibration(zed_camera_id, camera0_data, camera1_data, _zshift = 50.):
         colors = [(0,0,255), (0,255,0), (255,0,0)]
         #draw projections to camera0
         origin = tuple(pixel_points_camera0[0].astype(np.int32))
-        for col, _p in zip(colors, pixel_points_camera0[1:], strict=True):
+        for col, _p in zip(colors, pixel_points_camera0[1:]):
             _p = tuple(_p.astype(np.int32))
             cv.line(frame0, origin, _p, col, 2)
 
         #draw projections to camera1
         origin = tuple(pixel_points_camera1[0].astype(np.int32))
-        for col, _p in zip(colors, pixel_points_camera1[1:], strict=True):
+        for col, _p in zip(colors, pixel_points_camera1[1:]):
             _p = tuple(_p.astype(np.int32))
             cv.line(frame1, origin, _p, col, 2)
 
@@ -588,7 +588,7 @@ def get_cam1_to_world_transforms(cmtx0, dist0, R_W0, T_W0,
     points, _ = cv.projectPoints(unitv_points, R_W0, T_W0, cmtx0, dist0)
     points = points.reshape((4,2)).astype(np.int32)
     origin = tuple(points[0])
-    for col, _p in zip(colors, points[1:], strict=True):
+    for col, _p in zip(colors, points[1:]):
         _p = tuple(_p.astype(np.int32))
         cv.line(frame0, origin, _p, col, 2)
 
@@ -598,7 +598,7 @@ def get_cam1_to_world_transforms(cmtx0, dist0, R_W0, T_W0,
     points, _ = cv.projectPoints(unitv_points, R_W1, T_W1, cmtx1, dist1)
     points = points.reshape((4,2)).astype(np.int32)
     origin = tuple(points[0])
-    for col, _p in zip(colors, points[1:], strict=True):
+    for col, _p in zip(colors, points[1:]):
         _p = tuple(_p.astype(np.int32))
         cv.line(frame1, origin, _p, col, 2)
 
@@ -660,9 +660,9 @@ if __name__ == '__main__':
     parse_calibration_settings_file(sys.argv[1])
 
 
-    """Step1. Save calibration frames for single cameras"""
-    save_frames_single_camera('camera0') #save frames for camera0
-    save_frames_single_camera('camera1') #save frames for camera1
+    # """Step1. Save calibration frames for single cameras"""
+    # save_frames_single_camera('camera0') #save frames for camera0
+    # save_frames_single_camera('camera1') #save frames for camera1
 
 
     """Step2. Obtain camera intrinsic matrices and save them"""
@@ -676,8 +676,8 @@ if __name__ == '__main__':
     save_camera_intrinsics(cmtx1, dist1, 'camera1') #this will write cmtx and dist to disk
 
 
-    """Step3. Save calibration frames for both cameras simultaneously"""
-    save_frames_from_zed('zed_camera_id') #save simultaneous frames
+    # """Step3. Save calibration frames for both cameras simultaneously"""
+    # save_frames_from_zed('zed_camera_id') #save simultaneous frames
 
 
     """Step4. Use paired calibration pattern frames to obtain camera0 to camera1 rotation and translation"""

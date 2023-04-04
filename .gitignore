@@ -1,0 +1,7 @@
+frames/
+frames_pair/
+*.jpg
+*.png
+*.pyc
+*.pyo
+__pycache__/
