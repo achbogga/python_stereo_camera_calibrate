@@ -6,7 +6,7 @@ frame_height: 1242
 mono_calibration_frames: 10
 stereo_calibration_frames: 30
 view_resize: 1
-checkerboard_box_size_scale : 3.5
-checkerboard_rows: 4
-checkerboard_columns: 6
-cooldown: 100
+checkerboard_box_size_scale : 1.5
+checkerboard_rows: 7
+checkerboard_columns: 10
+cooldown: 50
