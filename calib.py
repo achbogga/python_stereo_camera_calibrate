@@ -5,6 +5,7 @@ import sys
 from scipy import linalg
 import yaml
 import os
+import argparse
 
 #This will contain the calibration settings from the calibration_settings.yaml file
 calibration_settings = {}
@@ -607,15 +608,25 @@ def load_extrinsic_calibration_parameters(camera_name):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) < 2:
-        print('Call with settings filename: "python3 calibrate.py calibration_settings.yaml"')
+    # Create argument parser
+    parser = argparse.ArgumentParser(description='Calibrate stereo cameras')
+    parser.add_argument('--settings', type=str, default='calibration_settings.yaml',
+                        help='Path to the settings file')
+    parser.add_argument('--mono', action='store_true',
+                        help='Calibrate mono cameras')
+    parser.add_argument('--stereo', action='store_true',
+                        help='Calibrate stereo cameras')
+    args = parser.parse_args()
+
+
+    if args.settings is None:
+        print('Call with settings filename: "python3 calib.py --settings calibration_settings.yaml"')
         quit()
 
     #Open and parse the settings file
-    parse_calibration_settings_file(sys.argv[1])
+    parse_calibration_settings_file(args.settings)
 
-
-    if len(sys.argv)>2 and (sys.argv[2]=='mono' or sys.argv[3]=='mono'):
+    if args.mono:
         """Step1. Save calibration frames for single cameras"""
         save_frames_single_camera('camera0') #save frames for camera0
         save_frames_single_camera('camera1') #save frames for camera1
@@ -633,11 +644,9 @@ if __name__ == '__main__':
         cmtx0, dist0 = load_camera_intrinsics('camera0')
         cmtx1, dist1 = load_camera_intrinsics('camera1')
 
-
-    if len(sys.argv)>2 and (sys.argv[2]=='stereo' or sys.argv[3]=='stereo'):
+    if args.stereo:
         """Step3. Save calibration frames for both cameras simultaneously"""
         save_frames_from_zed('zed_camera_id') #save simultaneous frames
-
 
         """Step4. Use paired calibration pattern frames to obtain camera0 to camera1 rotation and translation"""
         frames_prefix_c0 = os.path.join('frames_pair', 'camera0*')
@@ -661,7 +670,6 @@ if __name__ == '__main__':
     camera1_data = [cmtx1, dist1, R1, T1]
     #check your calibration makes sense
     check_calibration('zed_camera_id', camera0_data, camera1_data, _zshift = 60.)
-
 
     """Optional. Define a different origin point and save the calibration data"""
     # #get the world to camera0 rotation and translation
