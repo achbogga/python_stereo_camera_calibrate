@@ -26,7 +26,6 @@ def DLT(P1, P2, point1, point2):
     #print(Vh[3,0:3]/Vh[3,3])
     return Vh[3,0:3]/Vh[3,3]
 
-
 #Open and load the calibration_settings.yaml file
 def parse_calibration_settings_file(filename):
 
@@ -45,7 +44,6 @@ def parse_calibration_settings_file(filename):
     if 'camera0' not in calibration_settings.keys():
         print('camera0 key was not found in the settings file. Check if correct calibration_settings.yaml file was passed')
         quit()
-
 
 #Open camera stream and save frames
 def save_frames_single_camera(camera_name):
@@ -115,7 +113,6 @@ def save_frames_single_camera(camera_name):
             break
 
     cv.destroyAllWindows()
-
 
 #Calibrate single camera to obtain camera intrinsic parameters from saved frames.
 def calibrate_camera_for_intrinsic_parameters(images_prefix):
@@ -206,7 +203,6 @@ def save_camera_intrinsics(camera_matrix, distortion_coefs, camera_name):
         outf.write(str(en) + ' ')
     outf.write('\n')
 
-
 #load camera intrinsic parameters from a file
 def load_camera_intrinsics(camera_name):
 
@@ -225,87 +221,6 @@ def load_camera_intrinsics(camera_name):
                               for ll in intrinsic_lines])
     distortion_coefs = np.array([float(en) for en in distortion_line.split(' ')])
     return camera_matrix, distortion_coefs
-
-
-#open both cameras and take calibration frames
-# def save_frames_two_cams(camera0_name, camera1_name):
-
-#     #create frames directory
-#     if not os.path.exists('frames_pair'):
-#         os.mkdir('frames_pair')
-
-#     #settings for taking data
-#     view_resize = calibration_settings['view_resize']
-#     cooldown_time = calibration_settings['cooldown']
-#     number_to_save = calibration_settings['stereo_calibration_frames']
-
-#     #open the video streams
-#     cap0 = cv.VideoCapture(calibration_settings[camera0_name])
-#     cap1 = cv.VideoCapture(calibration_settings[camera1_name])
-
-#     #set camera resolutions
-#     width = calibration_settings['frame_width']
-#     height = calibration_settings['frame_height']
-#     cap0.set(3, width)
-#     cap0.set(4, height)
-#     cap1.set(3, width)
-#     cap1.set(4, height)
-
-#     cooldown = cooldown_time
-#     start = False
-#     saved_count = 0
-#     while True:
-
-#         ret0, frame0 = cap0.read()
-#         ret1, frame1 = cap1.read()
-
-#         if not ret0 or not ret1:
-#             print('Cameras not returning video data. Exiting...')
-#             quit()
-
-#         frame0_small = cv.resize(frame0, None, fx=1./view_resize, fy=1./view_resize)
-#         frame1_small = cv.resize(frame1, None, fx=1./view_resize, fy=1./view_resize)
-
-#         if not start:
-#             cv.putText(frame0_small, "Make sure both cameras can see the calibration pattern well", (50,50), cv.FONT_HERSHEY_COMPLEX, 1, (0,0,255), 1)
-#             cv.putText(frame0_small, "Press SPACEBAR to start collection frames", (50,100), cv.FONT_HERSHEY_COMPLEX, 1, (0,0,255), 1)
-
-#         if start:
-#             cooldown -= 1
-#             cv.putText(frame0_small, "Cooldown: " + str(cooldown), (50,50), cv.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 1)
-#             cv.putText(frame0_small, "Num frames: " + str(saved_count), (50,100), cv.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 1)
-
-#             cv.putText(frame1_small, "Cooldown: " + str(cooldown), (50,50), cv.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 1)
-#             cv.putText(frame1_small, "Num frames: " + str(saved_count), (50,100), cv.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 1)
-
-#             #save the frame when cooldown reaches 0.
-#             if cooldown <= 0:
-#                 savename = os.path.join('frames_pair', camera0_name + '_' + str(saved_count) + '.png')
-#                 cv.imwrite(savename, frame0)
-
-#                 savename = os.path.join('frames_pair', camera1_name + '_' + str(saved_count) + '.png')
-#                 cv.imwrite(savename, frame1)
-
-#                 saved_count += 1
-#                 cooldown = cooldown_time
-
-#         cv.imshow('frame0_small', frame0_small)
-#         cv.imshow('frame1_small', frame1_small)
-#         k = cv.waitKey(1)
-
-#         if k == 27:
-#             #if ESC is pressed at any time, the program will exit.
-#             quit()
-
-#         if k == 32:
-#             #Press spacebar to start data collection
-#             start = True
-
-#         #break out of the loop when enough number of frames have been saved
-#         if saved_count == number_to_save: break
-
-#     cv.destroyAllWindows()
-
 
 #open both cameras and take calibration frames
 def save_frames_from_zed(zed_camera_id):
@@ -388,7 +303,6 @@ def save_frames_from_zed(zed_camera_id):
 
     cv.destroyAllWindows()
 
-
 #open paired calibration frames and stereo calibrate for cam0 to cam1 coorindate transformations
 def stereo_calibrate(mtx0, dist0, mtx1, dist1, frames_prefix_c0, frames_prefix_c1):
     #read the synched frames
@@ -470,6 +384,7 @@ def _make_homogeneous_rep_matrix(R, t):
     P[3,3] = 1
 
     return P
+
 # Turn camera calibration data into projection matrix
 def get_projection_matrix(cmtx, R, T):
     P = cmtx @ _make_homogeneous_rep_matrix(R, T)[:3,:]
@@ -628,7 +543,6 @@ def get_cam1_to_world_transforms(cmtx0, dist0, R_W0, T_W0,
 
     return R_W1, T_W1
 
-
 def save_extrinsic_calibration_parameters(R0, T0, R1, T1, prefix = ''):
 
     #create folder if it does not exist
@@ -701,7 +615,7 @@ if __name__ == '__main__':
     parse_calibration_settings_file(sys.argv[1])
 
 
-    if len(sys.argv)>2 and sys.argv[2]=='mono':
+    if len(sys.argv)>2 and (sys.argv[2]=='mono' or sys.argv[3]=='mono'):
         """Step1. Save calibration frames for single cameras"""
         save_frames_single_camera('camera0') #save frames for camera0
         save_frames_single_camera('camera1') #save frames for camera1
@@ -720,7 +634,7 @@ if __name__ == '__main__':
         cmtx1, dist1 = load_camera_intrinsics('camera1')
 
 
-    if len(sys.argv)>3 and sys.argv[3]=='stereo':
+    if len(sys.argv)>2 and (sys.argv[2]=='stereo' or sys.argv[3]=='stereo'):
         """Step3. Save calibration frames for both cameras simultaneously"""
         save_frames_from_zed('zed_camera_id') #save simultaneous frames
 
